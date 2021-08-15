@@ -90,5 +90,19 @@ class Locales:
             'english': 'git path',
         }.get(self.language)
 
+    @property
+    def tag_selector(self):
+        return {
+            'simple chinese': '选择标签',
+            'english': 'tags',
+        }.get(self.language)
+
+    @property
+    def checkout(self):
+        return {
+            'simple chinese': '检出',
+            'english': 'checkout',
+        }.get(self.language)
+
 
 locales = Locales()

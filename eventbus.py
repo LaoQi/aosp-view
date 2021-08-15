@@ -51,6 +51,7 @@ class EventBus(threading.Thread):
                 handler(event)
 
     def run(self) -> None:
+        logging.debug("start event bus")
         while True:
             try:
                 task = self.queue.get()
@@ -80,5 +81,4 @@ def emit(topic, event=None):
 
 
 def start():
-    logging.debug("start event bus")
     _bus.start()

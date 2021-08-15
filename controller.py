@@ -10,12 +10,7 @@ class Controller:
 
     def load_init(self, url):
         logging.debug(f"start update {url}")
-        sleep(1)
-        eventbus.emit(eventbus.TOPIC_LOG, "load 20%")
-        sleep(1)
-        eventbus.emit(eventbus.TOPIC_LOG, "load 90%")
-        sleep(1)
-        eventbus.emit(eventbus.TOPIC_LOG, "load 100%")
+
         eventbus.emit(eventbus.TOPIC_LOAD_INIT_FINISH)
 
 

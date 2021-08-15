@@ -8,8 +8,8 @@ from ui import Window
 
 
 def main():
+    configs.init()
     eventbus.start()
-    configs.read()
     Controller()
     Window().mainloop()
 
