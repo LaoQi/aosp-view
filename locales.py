@@ -91,7 +91,7 @@ class Locales:
         }.get(self.language)
 
     @property
-    def tag_selector(self):
+    def ref_selector(self):
         return {
             'simple chinese': '选择标签',
             'english': 'tags',

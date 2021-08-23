@@ -7,17 +7,11 @@ from tkinter import ttk
 import configs
 import eventbus
 from locales import locales
+from ui.information import InfoFrame
 from ui.logs import LogsFrame
 from ui.preferences import PreferencesFrame
 from ui.sidebar import Sidebar
 from ui.statusbar import StatusBar
-
-
-class InfoFrame(tkinter.Frame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.label = tkinter.Label(self, text="the info")
-        self.label.pack()
 
 
 class ManageFrame(tkinter.Frame):
@@ -32,6 +26,11 @@ class ManageFrame(tkinter.Frame):
         self.notebook.add(tab2, text=locales.preferences)
 
         self.notebook.pack(side=tkinter.TOP, expand=1, fill=tkinter.BOTH)
+
+        eventbus.ui_listen(eventbus.TOPIC_SWITCH_TABS, self.switch_tabs)
+
+    def switch_tabs(self, index):
+        self.notebook.select(index)
 
 
 class MainFrame(tkinter.Frame):
@@ -145,6 +144,7 @@ class Window:
 
     def mainloop(self):
         self.master.after(50, self.update)
+        self.master.after(1, eventbus.emit_func(eventbus.TOPIC_GUI_COMPLETE))
         self.master.mainloop()
 
 

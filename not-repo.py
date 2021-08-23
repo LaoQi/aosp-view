@@ -1,21 +1,15 @@
-# coding:utf-8
 import logging
 
-import configs
-import eventbus
-from controller import Controller
-from ui import Window
 
+class NotRepo:
+    def __init__(self):
+        pass
 
-def main():
-    eventbus.start()
-    configs.init()
-    Controller()
-    Window().mainloop()
+    def clone(self, path, target, progress):
+        pass
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(threadName)s <%(module)s:%(lineno)d>[%(levelname)s]: %(message)s',
                         datefmt='%Y/%m/%d %H:%M:%S')
-    main()

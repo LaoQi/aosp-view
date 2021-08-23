@@ -8,6 +8,23 @@ TOPIC_LOAD_INIT = 'load_init'
 TOPIC_LOAD_INIT_FINISH = 'load_init_finish'
 TOPIC_LOAD_CONFIG = 'load_config'
 
+TOPIC_GUI_COMPLETE = 'gui_complete'
+
+TOPIC_UPDATE_INIT_URL = 'update_init_url'
+TOPIC_UPDATE_GIT_PATH = 'update_git_path'
+TOPIC_UPDATE_REPO_PATH = 'update_repo_path'
+TOPIC_UPDATE_MANIFEST = 'update_manifest'
+
+TOPIC_UPDATE_REF = 'update_ref'
+TOPIC_UPDATE_CURRENT_REF = 'update_current_ref'
+
+TOPIC_UPDATE_MANIFEST_COMPLETE = 'update_manifest_complete'
+
+TOPIC_CHECKOUT_MANIFEST = 'checkout_manifest'
+TOPIC_CHECKOUT_MANIFEST_COMPLETE = 'checkout_manifest_complete'
+
+TOPIC_SWITCH_TABS = 'switch_tabs'
+
 
 class Handler:
     def __init__(self, func):
@@ -78,6 +95,12 @@ def set_ui_queue(q):
 
 def emit(topic, event=None):
     _bus.dispatch(topic, event)
+
+
+def emit_func(topic, event=None):
+    def func():
+        emit(topic, event)
+    return func
 
 
 def start():
