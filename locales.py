@@ -1,3 +1,6 @@
+import locale
+
+
 class Locales:
     def __init__(self, language='simple chinese'):
         self.language = language
@@ -42,6 +45,13 @@ class Locales:
         }.get(self.language)
 
     @property
+    def about(self):
+        return {
+            'simple chinese': '关于',
+            'english': 'About',
+        }.get(self.language)
+
+    @property
     def info(self):
         return {
             'simple chinese': '信息',
@@ -59,50 +69,75 @@ class Locales:
     def init_url(self):
         return {
             'simple chinese': '初始化地址',
-            'english': 'init url',
+            'english': 'Init Url',
         }.get(self.language)
 
     @property
     def btn_update(self):
         return {
             'simple chinese': '更新',
-            'english': 'update',
+            'english': 'Update',
         }.get(self.language)
 
     @property
     def repo_path(self):
         return {
             'simple chinese': '本地路径',
-            'english': 'repo path',
+            'english': 'Repo Path',
         }.get(self.language)
 
     @property
     def btn_setting(self):
         return {
             'simple chinese': '设置',
-            'english': 'setting',
+            'english': 'Setting',
         }.get(self.language)
 
     @property
     def git_path(self):
         return {
             'simple chinese': 'git路径',
-            'english': 'git path',
+            'english': 'Git Path',
         }.get(self.language)
 
     @property
     def ref_selector(self):
         return {
-            'simple chinese': '选择标签',
-            'english': 'tags',
+            'simple chinese': '选择分支',
+            'english': 'Branch',
         }.get(self.language)
 
     @property
     def checkout(self):
         return {
             'simple chinese': '检出',
-            'english': 'checkout',
+            'english': 'Checkout',
+        }.get(self.language)
+
+    @property
+    def current_ref(self):
+        return {
+            'simple chinese': '当前分支',
+            'english': 'Current Branch',
+        }.get(self.language)
+
+    @property
+    def checkout_path(self):
+        return {
+            'simple chinese': '检出路径',
+            'english': 'Checkout Path',
+        }.get(self.language)
+
+    @property
+    def project(self):
+        return {
+            'simple chinese': '项目',
+            'english': 'Project',
         }.get(self.language)
 
 
-locales = Locales()
+locales = Locales(
+    {
+        'zh_CN': 'simple chinese',
+        'en_US': 'english',
+    }.get(locale.getdefaultlocale()[0], 'english'))

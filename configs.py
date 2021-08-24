@@ -9,6 +9,7 @@ import eventbus
 from manifest import Manifest
 
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), ".aosp-view.json")
+DEFAULT_MANIFEST_URL = 'https://android.googlesource.com/platform/manifest'
 
 KEY_GIT_PATH = 'git_path'
 KEY_INIT_URL = 'init_url'
@@ -48,14 +49,16 @@ class Configs:
 
             # result = subprocess.check_output([self.get(KEY_GIT_PATH, ''), 'tag', '-l'],
             #                                  cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
-            result = subprocess.check_output(
-                [
-                    self.get(KEY_GIT_PATH, ''),
-                    'for-each-ref',
-                    '--format=%(objectname:short) %(creatordate:short) %(refname:short)',
-                    '--sort=creatordate'
-                ],
-                cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
+
+            # cmd = [
+            #     self.get(KEY_GIT_PATH, ''), 'for-each-ref',
+            #     '--format=%(objectname:short) %(creatordate:short) %(refname:short)', '--sort=creatordate'
+            # ]
+            cmd = [
+                self.get(KEY_GIT_PATH, ''), 'branch', '-a',
+                '--format=%(objectname:short) %(creatordate:short) %(refname)', '--sort=creatordate'
+            ]
+            result = subprocess.check_output(cmd, cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
             lines = result.decode().strip().split('\n')
             logging.debug(f"find ref {len(lines)}")
             distinct_ref = OrderedDict()
@@ -64,9 +67,7 @@ class Configs:
                 if len(unpack) < 3:
                     continue
                 h, d, name = unpack
-                if name.startswith("origin"):
-                    name = name[7:]
-                distinct_ref[h] = (d, h, name,)
+                distinct_ref[h] = (d, h, name[11:])  # strip "/ref/heads/"
             self.refs = distinct_ref
             logging.debug(f"find distinct ref {len(self.refs)}")
             eventbus.emit(eventbus.TOPIC_UPDATE_REF, self.refs)
@@ -79,8 +80,8 @@ class Configs:
         logging.debug(f"set default configs")
         if not self.configs.get(KEY_GIT_PATH):
             self.configs[KEY_GIT_PATH] = self.default_git()
-        # if self.configs.get(KEY_REPO_PATH):
-        #     self.check_refs()
+        if not self.configs.get(KEY_INIT_URL):
+            self.configs[KEY_INIT_URL] = DEFAULT_MANIFEST_URL
 
     def read(self):
         if os.path.isfile(CONFIG_PATH):

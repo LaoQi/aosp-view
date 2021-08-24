@@ -18,7 +18,7 @@ class Controller:
     def load_init(url):
         logging.debug(f"start update {url} {os.path.join(configs.repo_path(), 'manifest')}")
 
-        cmd = [configs.git_path(), 'pull', '--force']
+        cmd = [configs.git_path(), 'fetch']
         kw = dict(cwd=os.path.join(configs.repo_path(), 'manifest'),
                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
@@ -28,15 +28,19 @@ class Controller:
                 os.path.join(configs.repo_path(), 'manifest')]
             kw['cwd'] = configs.repo_path()
 
-        p = subprocess.Popen(cmd, **kw)
+        try:
+            p = subprocess.Popen(cmd, **kw)
 
-        while p.poll() is None:
-            line = p.stdout.readline()
-            while line:
-                eventbus.emit(eventbus.TOPIC_LOG, line.decode())
+            while p.poll() is None:
                 line = p.stdout.readline()
+                while line:
+                    eventbus.emit(eventbus.TOPIC_LOG, line.decode())
+                    line = p.stdout.readline()
 
-            time.sleep(0.01)
+                time.sleep(0.01)
+        except Exception as e:
+            logging.debug(e)
+            eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
 
         eventbus.emit(eventbus.TOPIC_LOAD_INIT_FINISH)
 

@@ -7,6 +7,7 @@ from tkinter import ttk
 import configs
 import eventbus
 from locales import locales
+from ui.about import AboutFrame
 from ui.information import InfoFrame
 from ui.logs import LogsFrame
 from ui.preferences import PreferencesFrame
@@ -25,12 +26,18 @@ class ManageFrame(tkinter.Frame):
         tab2 = PreferencesFrame(self.notebook)
         self.notebook.add(tab2, text=locales.preferences)
 
+        tab3 = AboutFrame(self.notebook)
+        self.notebook.add(tab3, text=locales.about)
+
         self.notebook.pack(side=tkinter.TOP, expand=1, fill=tkinter.BOTH)
 
         eventbus.ui_listen(eventbus.TOPIC_SWITCH_TABS, self.switch_tabs)
 
     def switch_tabs(self, index):
         self.notebook.select(index)
+
+
+MANAGE_MIN_HEIGHT = 400
 
 
 class MainFrame(tkinter.Frame):
@@ -79,8 +86,8 @@ class MainFrame(tkinter.Frame):
     def resize_manage(self, event):
         total = self.winfo_height()
         height = self.manage_frame.winfo_height() + event.y
-        if height < 100:
-            height = 100
+        if height < MANAGE_MIN_HEIGHT:
+            height = MANAGE_MIN_HEIGHT
         elif height > total - 100:
             height = total - 100
         self.manage_frame.configure(height=height)

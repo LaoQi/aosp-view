@@ -11,6 +11,7 @@ class TreeView(tkinter.Frame):
     def __init__(self, master, **kw):
         super().__init__(master, **kw)
         self.tree = ttk.Treeview(self)
+        self.data = []
         self.mapping = {}
 
         ysb = ttk.Scrollbar(self, orient='vertical', command=self.tree.yview)
@@ -41,16 +42,25 @@ class TreeView(tkinter.Frame):
             self.tree.delete(child)
         self.mapping.clear()
 
+    def refresh_tree(self, keyword=None):
+        pass
+
+    def update_items(self, _):
+        pass
+
 
 class DirectoryTree(TreeView):
     def __init__(self, master):
         super().__init__(master)
         self.tree.heading('#0', text=locales.directory, anchor='w')
         eventbus.ui_listen(eventbus.TOPIC_UPDATE_MANIFEST_COMPLETE, self.update_items)
+        eventbus.ui_listen(eventbus.TOPIC_SIDEBAR_SEARCH, self.refresh_tree)
 
-    def update_items(self, _):
+    def refresh_tree(self, keyword=None):
         self.clear()
-        for project in configs.manifest().directory:
+        for project in self.data:
+            if keyword and keyword not in project.name:
+                continue
             last_slash = project.path.rfind('/')
             if last_slash < 0:
                 identifier = self.tree.insert('', tkinter.END, project.path, text=project.path)
@@ -65,32 +75,51 @@ class DirectoryTree(TreeView):
                 identifier = self.tree.insert(root, tkinter.END, text=project.path[last_slash + 1:])
                 self.mapping[identifier] = project
 
+    def update_items(self, _):
+        self.data = configs.manifest().directory
+        self.refresh_tree()
+
 
 class AllProjectsTree(TreeView):
     def __init__(self, master):
         super().__init__(master)
         self.tree.heading('#0', text=locales.all_projects, anchor='w')
         eventbus.ui_listen(eventbus.TOPIC_UPDATE_MANIFEST_COMPLETE, self.update_items)
+        eventbus.ui_listen(eventbus.TOPIC_SIDEBAR_SEARCH, self.refresh_tree)
 
-    def update_items(self, _):
+    def refresh_tree(self, keyword=None):
         self.clear()
-        for project in configs.manifest().all_projects:
+        for project in self.data:
+            if keyword and keyword not in project.name:
+                continue
             identifier = self.tree.insert('', tkinter.END, text=project.name)
             self.mapping[identifier] = project
+
+    def update_items(self, _):
+        self.data = configs.manifest().all_projects
+        self.refresh_tree()
 
 
 class GroupsTree(TreeView):
     def __init__(self, master):
         super().__init__(master)
+        self.tree.heading('#0', text=locales.groups, anchor='w')
         eventbus.ui_listen(eventbus.TOPIC_UPDATE_MANIFEST_COMPLETE, self.update_items)
+        eventbus.ui_listen(eventbus.TOPIC_SIDEBAR_SEARCH, self.refresh_tree)
 
-    def update_items(self, _):
+    def refresh_tree(self, keyword=None):
         self.clear()
-        for group, projects in configs.manifest().groups.items():
+        for group, projects in self.data:
             self.tree.insert('', tkinter.END, group, text=group)
             for project in projects:
+                if keyword and keyword not in project.name:
+                    continue
                 identifier = self.tree.insert(group, tkinter.END, text=project.name)
                 self.mapping[identifier] = project
+
+    def update_items(self, _):
+        self.data = configs.manifest().groups.items()
+        self.refresh_tree()
 
 
 class Sidebar(tkinter.Frame):
@@ -98,8 +127,9 @@ class Sidebar(tkinter.Frame):
         super().__init__(master, **kw)
         self.nodes = []
 
-        self.search_entry = tkinter.Entry(self)
-        self.search_entry.pack(side=tkinter.TOP, expand=0, fill=tkinter.X)
+        self.search_input = tkinter.Entry(self)
+        self.search_input.pack(side=tkinter.TOP, expand=0, fill=tkinter.X)
+        self.search_input.bind('<KeyRelease>', self._update_search)
 
         self.notebook = ttk.Notebook(self)
 
@@ -113,3 +143,7 @@ class Sidebar(tkinter.Frame):
         self.notebook.add(tab3, text=locales.groups)
 
         self.notebook.pack(side=tkinter.TOP, expand=1, fill=tkinter.BOTH)
+
+    def _update_search(self, _):
+        search_key = self.search_input.get()
+        eventbus.emit(eventbus.TOPIC_SIDEBAR_SEARCH, search_key)

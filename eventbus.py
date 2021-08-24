@@ -25,6 +25,8 @@ TOPIC_CHECKOUT_MANIFEST_COMPLETE = 'checkout_manifest_complete'
 
 TOPIC_SWITCH_TABS = 'switch_tabs'
 
+TOPIC_SIDEBAR_SEARCH = 'sidebar_search'
+
 
 class Handler:
     def __init__(self, func):
