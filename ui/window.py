@@ -17,7 +17,7 @@ from ui.statusbar import StatusBar
 
 class ManageFrame(tkinter.Frame):
     def __init__(self, master):
-        super().__init__(master, height=400)
+        super().__init__(master)
         self.notebook = ttk.Notebook(self)
 
         tab1 = InfoFrame(self.notebook)
@@ -31,79 +31,27 @@ class ManageFrame(tkinter.Frame):
 
         self.notebook.pack(side=tkinter.TOP, expand=1, fill=tkinter.BOTH)
 
-        eventbus.ui_listen(eventbus.TOPIC_SWITCH_TABS, self.switch_tabs)
+        eventbus.ui_listen(eventbus.TOPIC_SWITCH_MAIN_TABS, self.switch_tabs)
 
     def switch_tabs(self, index):
         self.notebook.select(index)
 
 
-MANAGE_MIN_HEIGHT = 400
-
-
-class MainFrame(tkinter.Frame):
+class MainFrame(tkinter.PanedWindow):
     def __init__(self, master):
-        super().__init__(master)
-        self.sidebar = Sidebar(self, width=300)
-        # self.init_tree()
-        self.sidebar.pack(side=tkinter.LEFT, fill=tkinter.Y)
-        self.sidebar.pack_propagate(0)
+        super().__init__(master, orient=tkinter.HORIZONTAL)
 
-        x_separator = tkinter.Frame(self,
-                                    width=5, bd=5, relief=tkinter.SUNKEN,
-                                    cursor="sb_h_double_arrow")
-        x_separator.pack(side=tkinter.LEFT, fill=tkinter.Y, padx=0, pady=0)
-        x_separator.bind('<B1-Motion>', self.resize_sidebar)
+        self.sidebar = Sidebar(self)
+        self.add(self.sidebar)
 
-        self.right_frame = tkinter.Frame(self)
+        self.right = tkinter.PanedWindow(self, orient=tkinter.VERTICAL)
+        self.add(self.right)
 
-        self.manage_frame = ManageFrame(self.right_frame)
-        self.manage_frame.pack(side=tkinter.TOP, fill=tkinter.BOTH)
-        self.manage_frame.pack_propagate(0)
+        self.manage_frame = ManageFrame(self.right)
+        self.right.add(self.manage_frame)
 
-        y_separator = tkinter.Frame(self.right_frame,
-                                    height=5, bd=5, relief=tkinter.SUNKEN,
-                                    cursor="sb_v_double_arrow")
-        y_separator.pack(side=tkinter.TOP, fill=tkinter.X, padx=0, pady=0)
-        y_separator.bind('<B1-Motion>', self.resize_manage)
-
-        self.logs_frame = LogsFrame(self.right_frame)
-        self.logs_frame.pack(side=tkinter.BOTTOM, expand=1, fill=tkinter.BOTH)
-
-        self.right_frame.pack(side=tkinter.RIGHT, expand=1, fill=tkinter.BOTH)
-        self.right_frame.pack_propagate(0)
-
-        self.bind('<Configure>', self.resize)
-
-    def resize_sidebar(self, event):
-        total = self.winfo_width()
-        width = self.sidebar.winfo_width() + event.x
-        if width < 150:
-            width = 150
-        elif width > total - 400:
-            width = total - 400
-        self.sidebar.configure(width=width)
-
-    def resize_manage(self, event):
-        total = self.winfo_height()
-        height = self.manage_frame.winfo_height() + event.y
-        if height < MANAGE_MIN_HEIGHT:
-            height = MANAGE_MIN_HEIGHT
-        elif height > total - 100:
-            height = total - 100
-        self.manage_frame.configure(height=height)
-
-    def resize(self, event):
-        total_height = self.winfo_height()
-        manage_height = self.manage_frame.winfo_height() + event.y
-        if manage_height > total_height - 100:
-            manage_height = total_height - 100
-            self.manage_frame.configure(height=manage_height)
-
-        total_width = self.winfo_width()
-        sidebar_width = self.sidebar.winfo_width() + event.x
-        if sidebar_width > total_width - 400:
-            sidebar_width = total_width - 400
-            self.sidebar.configure(width=sidebar_width)
+        self.logs_frame = LogsFrame(self.right)
+        self.right.add(self.logs_frame)
 
 
 class Window:
@@ -113,8 +61,8 @@ class Window:
 
         self.master = tkinter.Tk()
         self.master.title("aosp-view")
-        self.master.geometry('1280x640')
-        self.master.minsize(800, 600)
+        self.master.geometry('1280x800')
+        self.master.minsize(800, 800)
         self.master.iconbitmap("res/android_10_logo.ico")
         self.master.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -131,9 +79,18 @@ class Window:
         self.status_bar.pack(side=tkinter.BOTTOM, expand=0, fill=tkinter.X)
         self.status_bar.pack_propagate(0)
 
+        eventbus.ui_listen(eventbus.TOPIC_DISABLE_WINDOW, lambda _: self.disable())
+        eventbus.ui_listen(eventbus.TOPIC_ENABLE_WINDOW, lambda _: self.enable())
+
     def on_close(self):
         configs.write()
         self.master.quit()
+
+    def disable(self):
+        self.master.attributes('-disabled', 1)
+
+    def enable(self):
+        self.master.attributes('-disabled', 0)
 
     def update(self):
         task = None

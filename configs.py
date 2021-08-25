@@ -21,7 +21,7 @@ class Configs:
 
     def __init__(self):
         self.configs = {}
-        self.refs = None
+        self.refs = {}
         self.manifest = Manifest()
         self.listen()
 
@@ -130,6 +130,14 @@ def init_url():
     return _configs.get(KEY_INIT_URL, '')
 
 
+def base_url():
+    # init url strip 'platform/manifest'
+    url = _configs.get(KEY_INIT_URL, '')
+    if len(url) < 17:
+        raise Exception(f'base url error, {url}')
+    return url[:-17]
+
+
 def repo_path():
     return _configs.get(KEY_REPO_PATH, '')
 
@@ -140,6 +148,11 @@ def git_path():
 
 def current_ref():
     return _configs.get(KEY_REF_HASH, '')
+
+
+def current_ref_name():
+    ref = _configs.get(KEY_REF_HASH, '')
+    return _configs.refs.get(ref)[2]
 
 
 def manifest():

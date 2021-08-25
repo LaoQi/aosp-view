@@ -17,10 +17,16 @@ class Manifest:
     def __init__(self):
         self.content = None
         self.projects = []
+        self.default_revision = 'master'
 
     def read_xml(self):
         tree = minidom.parseString(self.content)
         document = tree.documentElement
+        default_ele = document.getElementsByTagName("default")[0]
+        self.default_revision = default_ele.getAttribute('revision')
+        if self.default_revision.startswith('refs'):
+            self.default_revision = self.default_revision.split('/')[-1]
+
         projects = document.getElementsByTagName("project")
         for p in projects:
             self.projects.append(Project(p.getAttribute('name'), p.getAttribute('path'), p.getAttribute('groups')))
@@ -41,16 +47,14 @@ class Manifest:
 
     @property
     def groups(self):
-        groups = {"nogroup": []}
+        groups = {"all": []}
         for project in self.projects:
-            if len(project.groups) == 0:
-                groups["nogroup"].append(project)
-            else:
-                for group in project.groups:
-                    if group in groups:
-                        groups[group].append(project)
-                    else:
-                        groups[group] = [project]
+            groups["all"].append(project)
+            for group in project.groups:
+                if group in groups:
+                    groups[group].append(project)
+                else:
+                    groups[group] = [project]
         return groups
 
 

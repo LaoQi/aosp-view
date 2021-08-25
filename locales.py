@@ -122,6 +122,13 @@ class Locales:
         }.get(self.language)
 
     @property
+    def revision(self):
+        return {
+            'simple chinese': '版本',
+            'english': 'Revision',
+        }.get(self.language)
+
+    @property
     def checkout_path(self):
         return {
             'simple chinese': '检出路径',

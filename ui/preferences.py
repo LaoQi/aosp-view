@@ -152,9 +152,11 @@ class PreferencesFrame(tkinter.Frame):
         eventbus.emit(eventbus.TOPIC_UPDATE_INIT_URL, init_url)
         eventbus.emit(eventbus.TOPIC_LOG, f"fetch {init_url}")
         eventbus.emit(eventbus.TOPIC_LOAD_INIT, init_url)
+        eventbus.emit(eventbus.TOPIC_DISABLE_WINDOW)
 
     def init_load_finish(self, _):
         eventbus.emit(eventbus.TOPIC_LOG, f"update finish")
+        eventbus.emit(eventbus.TOPIC_ENABLE_WINDOW)
         self.init_url_entry.enable()
 
     def modify_config(self):

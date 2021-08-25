@@ -32,9 +32,10 @@ class TreeView(tkinter.Frame):
 
     def select_node(self, _):
         node = self.tree.focus()
-        eventbus.emit(eventbus.TOPIC_SWITCH_TABS, 0)
+        eventbus.emit(eventbus.TOPIC_SWITCH_MAIN_TABS, 0)
         if node in self.mapping:
             logging.debug(f"select node {self.mapping[node]}")
+            eventbus.emit(eventbus.TOPIC_SIDEBAR_SELECTED, self.mapping.get(node))
 
     def clear(self):
         children = self.tree.get_children()
@@ -63,7 +64,7 @@ class DirectoryTree(TreeView):
                 continue
             last_slash = project.path.rfind('/')
             if last_slash < 0:
-                identifier = self.tree.insert('', tkinter.END, project.path, text=project.path)
+                identifier = self.tree.insert('', tkinter.END, text=project.path)
                 self.mapping[identifier] = project
             else:
                 root = ''
@@ -83,7 +84,7 @@ class DirectoryTree(TreeView):
 class AllProjectsTree(TreeView):
     def __init__(self, master):
         super().__init__(master)
-        self.tree.heading('#0', text=locales.all_projects, anchor='w')
+        self.tree.heading('#0', text=locales.all_projects, anchor=tkinter.W)
         eventbus.ui_listen(eventbus.TOPIC_UPDATE_MANIFEST_COMPLETE, self.update_items)
         eventbus.ui_listen(eventbus.TOPIC_SIDEBAR_SEARCH, self.refresh_tree)
 

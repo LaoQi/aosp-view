@@ -23,9 +23,17 @@ TOPIC_UPDATE_MANIFEST_COMPLETE = 'update_manifest_complete'
 TOPIC_CHECKOUT_MANIFEST = 'checkout_manifest'
 TOPIC_CHECKOUT_MANIFEST_COMPLETE = 'checkout_manifest_complete'
 
-TOPIC_SWITCH_TABS = 'switch_tabs'
+TOPIC_CHECKOUT_PROJECT = 'checkout_project'
+TOPIC_CHECKOUT_PROJECT_COMPLETE = 'checkout_project_complete'
+
+TOPIC_SWITCH_MAIN_TABS = 'switch_main_tabs'
 
 TOPIC_SIDEBAR_SEARCH = 'sidebar_search'
+
+TOPIC_SIDEBAR_SELECTED = 'sidebar_selected'
+
+TOPIC_DISABLE_WINDOW = 'disable_window'
+TOPIC_ENABLE_WINDOW = 'enable_window'
 
 
 class Handler:
