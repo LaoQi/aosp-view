@@ -38,6 +38,13 @@ class Locales:
         }.get(self.language)
 
     @property
+    def git_url(self):
+        return {
+            'simple chinese': '仓库地址',
+            'english': 'Git Url',
+        }.get(self.language)
+
+    @property
     def preferences(self):
         return {
             'simple chinese': '首选项',
@@ -94,7 +101,7 @@ class Locales:
         }.get(self.language)
 
     @property
-    def git_path(self):
+    def git_executable(self):
         return {
             'simple chinese': 'git路径',
             'english': 'Git Path',

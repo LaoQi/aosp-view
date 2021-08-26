@@ -130,7 +130,7 @@ class PreferencesFrame(tkinter.Frame):
         self.init_url_entry.pack(side=tkinter.TOP, padx=10, pady=10, expand=0, fill=tkinter.X)
         self.init_url_entry.set_value(configs.init_url())
 
-        self.git_path_entry = EntryGroup(self, locales.git_path, locales.btn_setting, command=self.set_git_path)
+        self.git_path_entry = EntryGroup(self, locales.git_executable, locales.btn_setting, command=self.set_git_path)
         self.git_path_entry.pack(side=tkinter.TOP, padx=10, pady=10, expand=0, fill=tkinter.X)
         self.git_path_entry.set_value(configs.git_path())
 
@@ -143,7 +143,7 @@ class PreferencesFrame(tkinter.Frame):
 
         eventbus.ui_listen(eventbus.TOPIC_LOAD_CONFIG, self.modify_config)
         eventbus.ui_listen(eventbus.TOPIC_LOAD_INIT_FINISH, self.init_load_finish)
-        eventbus.ui_listen(eventbus.TOPIC_UPDATE_REF, self.update_refs)
+        eventbus.ui_listen(eventbus.TOPIC_UPDATE_REFS_COMPLETE, self.update_refs)
         eventbus.ui_listen(eventbus.TOPIC_CHECKOUT_MANIFEST_COMPLETE, self.checkout_ref_complete)
 
     def init_load(self):
@@ -181,8 +181,8 @@ class PreferencesFrame(tkinter.Frame):
 
     def checkout_ref(self):
         self.ref_selector.disable()
-        ref = self.ref_selector.value
-        eventbus.emit(eventbus.TOPIC_CHECKOUT_MANIFEST, ref)
+        ref_hash = self.ref_selector.value
+        eventbus.emit(eventbus.TOPIC_CHECKOUT_MANIFEST, ref_hash)
 
     def checkout_ref_complete(self, _):
         self.ref_selector.enable()

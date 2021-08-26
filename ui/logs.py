@@ -12,22 +12,11 @@ class LogsFrame(tkinter.Frame):
         self.text = scrolledtext.ScrolledText(self)
         self.text.pack(side=tkinter.LEFT, expand=1, fill=tkinter.BOTH)
         self.text.config(state=tkinter.DISABLED)
-        eventbus.ui_listen(eventbus.TOPIC_LOG, self.on_msg)
+        eventbus.ui_listen(eventbus.TOPIC_LOG, self.on_message)
 
-    def append(self, msg):
+    def on_message(self, msg):
         self.last_line_index = self.text.index(tkinter.END)
         self.text.config(state=tkinter.NORMAL)
-        self.text.insert(tkinter.END, msg)
+        self.text.insert(tkinter.END, f"{msg}\n")
         self.text.config(state=tkinter.DISABLED)
         self.text.see(tkinter.END)
-
-    def on_msg(self, msg):
-        logging.debug(repr(msg))
-        if msg.endswith('\r'):
-            self.text.config(state=tkinter.NORMAL)
-            self.text.delete(self.last_line_index, tkinter.END)
-            self.text.insert(tkinter.END, msg)
-            self.text.config(state=tkinter.DISABLED)
-            self.text.see(tkinter.END)
-        else:
-            self.append(f"{msg}\n")

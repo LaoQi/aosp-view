@@ -12,7 +12,7 @@ class AboutFrame(tkinter.Frame):
     def __init__(self, master):
         super().__init__(master)
         label = tkinter.Label(self, text="Project Home")
-        label.pack(side=tkinter.TOP, pady=10)
+        label.pack(side=tkinter.TOP, pady=50)
 
         link = tkinter.Label(self, text=PROJECT_HOME, fg="blue", cursor="hand2")
         link.pack(side=tkinter.TOP, pady=10)

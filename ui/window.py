@@ -42,13 +42,13 @@ class MainFrame(tkinter.PanedWindow):
         super().__init__(master, orient=tkinter.HORIZONTAL)
 
         self.sidebar = Sidebar(self)
-        self.add(self.sidebar)
+        self.add(self.sidebar, width=400)
 
         self.right = tkinter.PanedWindow(self, orient=tkinter.VERTICAL)
         self.add(self.right)
 
         self.manage_frame = ManageFrame(self.right)
-        self.right.add(self.manage_frame)
+        self.right.add(self.manage_frame, height=400)
 
         self.logs_frame = LogsFrame(self.right)
         self.right.add(self.logs_frame)
@@ -62,7 +62,7 @@ class Window:
         self.master = tkinter.Tk()
         self.master.title("aosp-view")
         self.master.geometry('1280x800')
-        self.master.minsize(800, 800)
+        self.master.minsize(1024, 800)
         self.master.iconbitmap("res/android_10_logo.ico")
         self.master.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -87,9 +87,11 @@ class Window:
         self.master.quit()
 
     def disable(self):
+        # self.master.configure(cursor="watch")  # Non-operative
         self.master.attributes('-disabled', 1)
 
     def enable(self):
+        # self.master.configure(cursor="arrow")  # Non-operative
         self.master.attributes('-disabled', 0)
 
     def update(self):
@@ -106,9 +108,15 @@ class Window:
                 eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
         self.master.after(50, self.update)
 
+    @staticmethod
+    def on_gui_complete():
+        eventbus.emit(eventbus.TOPIC_GUI_COMPLETE)
+        if not configs.ready():
+            eventbus.emit(eventbus.TOPIC_SWITCH_MAIN_TABS, 1)
+
     def mainloop(self):
         self.master.after(50, self.update)
-        self.master.after(1, eventbus.emit_func(eventbus.TOPIC_GUI_COMPLETE))
+        self.master.after(1, self.on_gui_complete)
         self.master.mainloop()
 
 

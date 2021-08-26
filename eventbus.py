@@ -15,7 +15,8 @@ TOPIC_UPDATE_GIT_PATH = 'update_git_path'
 TOPIC_UPDATE_REPO_PATH = 'update_repo_path'
 TOPIC_UPDATE_MANIFEST = 'update_manifest'
 
-TOPIC_UPDATE_REF = 'update_ref'
+TOPIC_UPDATE_REFS = 'update_refs'
+TOPIC_UPDATE_REFS_COMPLETE = 'update_refs_complete'
 TOPIC_UPDATE_CURRENT_REF = 'update_current_ref'
 
 TOPIC_UPDATE_MANIFEST_COMPLETE = 'update_manifest_complete'

@@ -2,8 +2,6 @@ import json
 import logging
 import os
 import platform
-import subprocess
-from collections import OrderedDict
 
 import eventbus
 from manifest import Manifest
@@ -23,55 +21,24 @@ class Configs:
         self.configs = {}
         self.refs = {}
         self.manifest = Manifest()
-        self.listen()
+        self.add_listener()
 
-    def listen(self):
+    def add_listener(self):
         eventbus.listen(eventbus.TOPIC_UPDATE_INIT_URL, lambda x: self.update({KEY_INIT_URL: x}))
         eventbus.listen(eventbus.TOPIC_UPDATE_GIT_PATH, lambda x: self.update({KEY_GIT_PATH: x}))
         eventbus.listen(eventbus.TOPIC_UPDATE_REPO_PATH, lambda x: self.update({KEY_REPO_PATH: x}))
-        eventbus.listen(eventbus.TOPIC_UPDATE_MANIFEST, lambda x: self.update_manifest(x))
         eventbus.listen(eventbus.TOPIC_CHECKOUT_MANIFEST_COMPLETE, lambda x: self.update({KEY_REF_HASH: x}))
 
-        eventbus.listen(eventbus.TOPIC_GUI_COMPLETE, lambda x: self.check_refs())
+        eventbus.listen(eventbus.TOPIC_UPDATE_MANIFEST, self.update_manifest)
+        eventbus.listen(eventbus.TOPIC_UPDATE_REFS, self.update_refs)
 
     def update_manifest(self, content):
         self.manifest.set_content(content)
         eventbus.emit(eventbus.TOPIC_UPDATE_MANIFEST_COMPLETE)
 
-    def check_refs(self):
-        logging.debug("check refs")
-        if os.path.exists(os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest')):
-            # result = subprocess.check_output([self.get(KEY_GIT_PATH, ''), 'symbolic-ref', '--short', '-q', 'HEAD'],
-            #                                  cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
-            # self.current_ref = result.decode().strip()
-            # logging.debug(f"find current ref {self.current_ref}")
-            # eventbus.emit(eventbus.TOPIC_UPDATE_CURRENT_REF, self.current_ref)
-
-            # result = subprocess.check_output([self.get(KEY_GIT_PATH, ''), 'tag', '-l'],
-            #                                  cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
-
-            # cmd = [
-            #     self.get(KEY_GIT_PATH, ''), 'for-each-ref',
-            #     '--format=%(objectname:short) %(creatordate:short) %(refname:short)', '--sort=creatordate'
-            # ]
-            cmd = [
-                self.get(KEY_GIT_PATH, ''), 'branch', '-a',
-                '--format=%(objectname:short) %(creatordate:short) %(refname)', '--sort=creatordate'
-            ]
-            result = subprocess.check_output(cmd, cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
-            lines = result.decode().strip().split('\n')
-            logging.debug(f"find ref {len(lines)}")
-            distinct_ref = OrderedDict()
-            for line in lines[::-1]:
-                unpack = line.split(' ')
-                if len(unpack) < 3:
-                    continue
-                h, d, name = unpack
-                distinct_ref[h] = (d, h, name[11:])  # strip "/ref/heads/"
-            self.refs = distinct_ref
-            logging.debug(f"find distinct ref {len(self.refs)}")
-            eventbus.emit(eventbus.TOPIC_UPDATE_REF, self.refs)
-            eventbus.emit(eventbus.TOPIC_CHECKOUT_MANIFEST, self.get(KEY_REF_HASH, 'master'))
+    def update_refs(self, data):
+        self.refs = data
+        eventbus.emit(eventbus.TOPIC_UPDATE_REFS_COMPLETE)
 
     def update(self, c: dict):
         self.configs.update(c)
@@ -146,6 +113,10 @@ def git_path():
     return _configs.get(KEY_GIT_PATH, '')
 
 
+def ref_realpath(ref_hash):
+    return os.path.realpath(os.path.join(repo_path(), _configs.refs.get(ref_hash)[2]))
+
+
 def current_ref():
     return _configs.get(KEY_REF_HASH, '')
 
@@ -153,6 +124,18 @@ def current_ref():
 def current_ref_name():
     ref = _configs.get(KEY_REF_HASH, '')
     return _configs.refs.get(ref)[2]
+
+
+def current_ref_realpath():
+    return ref_realpath(_configs.get(KEY_REF_HASH, ''))
+
+
+def project_realpath(project):
+    return os.path.realpath(os.path.join(repo_path(), current_ref_realpath(), project.path))
+
+
+def manifest_realpath():
+    return os.path.realpath(os.path.join(repo_path(), 'manifest'))
 
 
 def manifest():
@@ -163,5 +146,9 @@ def refs():
     return _configs.refs
 
 
-def check_refs():
-    _configs.check_refs()
+def ref_name(ref_hash):
+    return _configs.refs.get(ref_hash)[2]
+
+
+def ready():
+    return repo_path() != '' and git_path() != '' and init_url() != ''

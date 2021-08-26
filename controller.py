@@ -4,104 +4,151 @@ import os
 import subprocess
 import time
 import traceback
+from collections import OrderedDict
 
 import configs
 import eventbus
 
 
-class Controller:
-    def __init__(self):
-        eventbus.listen(eventbus.TOPIC_LOAD_INIT, self.load_init)
-        eventbus.listen(eventbus.TOPIC_LOAD_INIT_FINISH, lambda x: configs.check_refs())
-        eventbus.listen(eventbus.TOPIC_CHECKOUT_MANIFEST, lambda x: self.checkout_manifest(x))
-        eventbus.listen(eventbus.TOPIC_CHECKOUT_PROJECT, self.checkout_project)
-
-    def load_init(self, url):
-        logging.debug(f"start update {url} {os.path.join(configs.repo_path(), 'manifest')}")
-
-        cmd = [
-            configs.git_path(), 'clone', '--bare', configs.init_url(),
-            os.path.join(configs.repo_path(), 'manifest')]
-        kw = dict(cwd=configs.repo_path(),
-                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        if os.path.exists(os.path.join(configs.repo_path(), 'manifest')):
-            self._check_init_url(url)
-            cmd = [configs.git_path(), 'fetch']
-            kw['cwd'] = os.path.join(configs.repo_path(), 'manifest')
-
+class Processor:
+    @staticmethod
+    def check_output(cmd, cwd):
+        logging.debug(f"RunCommand: {subprocess.list2cmdline(cmd)}")
+        eventbus.emit(eventbus.TOPIC_LOG, f"RunCommand: {subprocess.list2cmdline(cmd)}")
         try:
-            p = subprocess.Popen(cmd, **kw)
+            result = subprocess.check_output(cmd, cwd=cwd)
+            return result.decode()
+        except subprocess.CalledProcessError:
+            eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
 
+    @staticmethod
+    def open(cmd, cwd, **kw):
+        logging.debug(f"RunCommand: {subprocess.list2cmdline(cmd)}")
+        eventbus.emit(eventbus.TOPIC_LOG, f"RunCommand: {subprocess.list2cmdline(cmd)}")
+        try:
+            p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)
             while p.poll() is None:
                 line = p.stdout.readline()
                 while line:
                     eventbus.emit(eventbus.TOPIC_LOG, line.decode())
                     line = p.stdout.readline()
-
                 time.sleep(0.01)
         except Exception as e:
             logging.debug(e)
             eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
 
+    @staticmethod
+    def run(cmd, cwd, **kw):
+        logging.debug(f"RunCommand: {subprocess.list2cmdline(cmd)}")
+        try:
+            subprocess.check_output(cmd, cwd=cwd, **kw)
+        except subprocess.CalledProcessError:
+            return False
+        return True
+
+
+class Controller:
+    def __init__(self):
+        eventbus.listen(eventbus.TOPIC_LOAD_INIT, self.load_init)
+        eventbus.listen(eventbus.TOPIC_LOAD_INIT_FINISH, lambda x: self.check_refs(x))
+        eventbus.listen(eventbus.TOPIC_CHECKOUT_MANIFEST, lambda x: self.checkout_manifest(x))
+        eventbus.listen(eventbus.TOPIC_CHECKOUT_PROJECT, self.checkout_project)
+
+        eventbus.listen(eventbus.TOPIC_GUI_COMPLETE, self.check_refs)
+
+    def load_init(self, url):
+        logging.debug(f"start update {url} {configs.manifest_realpath()}")
+
+        cmd = [
+            configs.git_path(), 'clone', '--bare', configs.init_url(),
+            configs.manifest_realpath()]
+        cwd = configs.repo_path()
+
+        if os.path.exists(configs.manifest_realpath()):
+            self._check_init_url(url)
+            cmd = [configs.git_path(), 'fetch']
+            cwd = configs.manifest_realpath()
+
+        Processor.open(cmd, cwd)
         eventbus.emit(eventbus.TOPIC_LOAD_INIT_FINISH)
 
     @staticmethod
     def _check_init_url(url):
-        try:
-            result = subprocess.check_output(
-                [configs.git_path(), 'config', 'remote.origin.url'],
-                cwd=os.path.join(configs.repo_path(), 'manifest'))
-            current_url = result.decode().strip()
-            logging.debug(f"Current remote {current_url} compare to {url} {current_url == url}")
-            if current_url != url.strip():
-                subprocess.check_output(
-                    [configs.git_path(), 'config', 'remote.origin.url', url],
-                    cwd=os.path.join(configs.repo_path(), 'manifest'))
-                eventbus.emit(eventbus.TOPIC_LOG, f"reset remote {current_url} ==> {url}")
-        except subprocess.CalledProcessError:
-            eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
+        result = Processor.check_output(
+            [configs.git_path(), 'config', 'remote.origin.url'],
+            cwd=configs.manifest_realpath())
+        current_url = result.strip()
+        logging.debug(f"Current remote {current_url} compare to {url} {current_url == url}")
+        if current_url != url.strip():
+            Processor.check_output(
+                [configs.git_path(), 'config', 'remote.origin.url', url],
+                cwd=configs.manifest_realpath())
+            eventbus.emit(eventbus.TOPIC_LOG, f"reset remote {current_url} ==> {url}")
 
     @staticmethod
-    def checkout_manifest(ref):
-        logging.debug(f"start checkout {ref}")
+    def check_refs(_):
+        if os.path.exists(configs.manifest_realpath()):
 
-        try:
-            result = subprocess.check_output(
-                [configs.git_path(), 'cat-file', 'blob', f'{ref}:default.xml'],
-                cwd=os.path.join(configs.repo_path(), 'manifest'))
-            if not os.path.exists(os.path.join(configs.repo_path(), ref)):
-                logging.debug(f"make directory {os.path.join(configs.repo_path(), ref)}")
-                os.mkdir(os.path.join(configs.repo_path(), ref))
+            result = Processor.check_output(
+                [configs.git_path(), 'rev-parse', '--short', 'HEAD'], configs.manifest_realpath())
+            current_ref = result.strip()
+            old_ref = configs.current_ref()
+            if old_ref is not '':
+                result = Processor.run(
+                    [configs.git_path(), 'cat-file', '-p', old_ref], configs.manifest_realpath())
+                if result:
+                    current_ref = old_ref
 
-            eventbus.emit(eventbus.TOPIC_LOG, f'checkout {ref} complete')
-            eventbus.emit(eventbus.TOPIC_CHECKOUT_MANIFEST_COMPLETE, ref)
-            eventbus.emit(eventbus.TOPIC_UPDATE_MANIFEST, result.decode())
-        except subprocess.CalledProcessError:
-            eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
+            # logging.debug(f"find current ref {self.current_ref}")
+            # eventbus.emit(eventbus.TOPIC_UPDATE_CURRENT_REF, self.current_ref)
+
+            # result = subprocess.check_output([self.get(KEY_GIT_PATH, ''), 'tag', '-l'],
+            #                                  cwd=os.path.join(self.get(KEY_REPO_PATH, ''), 'manifest'))
+
+            result = Processor.check_output([
+                configs.git_path(), 'branch', '-a',
+                '--format=%(objectname:short) %(creatordate:short) %(refname)', '--sort=creatordate'
+            ], configs.manifest_realpath())
+            lines = result.strip().split('\n')
+            distinct_ref = OrderedDict()
+            for line in lines[::-1]:
+                unpack = line.split(' ')
+                if len(unpack) < 3:
+                    continue
+                h, d, name = unpack
+                distinct_ref[h] = (d, h, name[11:])  # strip "/ref/heads/"
+            logging.debug(f"find ref {len(distinct_ref)}")
+            eventbus.emit(eventbus.TOPIC_UPDATE_REFS, distinct_ref)
+            eventbus.emit(eventbus.TOPIC_CHECKOUT_MANIFEST, current_ref)
+
+    @staticmethod
+    def checkout_manifest(ref_hash):
+        logging.debug(f"start checkout {ref_hash}")
+
+        result = Processor.check_output(
+            [configs.git_path(), 'cat-file', 'blob', f'{ref_hash}:default.xml'],
+            cwd=configs.manifest_realpath())
+        if not os.path.exists(configs.ref_realpath(ref_hash)):
+            logging.debug(f"make directory {configs.ref_realpath(ref_hash)}")
+            os.mkdir(configs.ref_realpath(ref_hash))
+
+        eventbus.emit(eventbus.TOPIC_LOG, f'checkout {ref_hash} complete')
+        eventbus.emit(eventbus.TOPIC_CHECKOUT_MANIFEST_COMPLETE, ref_hash)
+        eventbus.emit(eventbus.TOPIC_UPDATE_MANIFEST, result)
 
     @staticmethod
     def checkout_project(project):
-        logging.debug(f"start checkout {project.name}")
-        try:
-            p = subprocess.Popen([
-                configs.git_path(), 'clone', '--depth=1', '-q', f"{configs.base_url()}{project.name}.git",
-                '-b', configs.manifest().default_revision,
-                os.path.join(configs.repo_path(), configs.current_ref(), project.path),
-            ],
-                cwd=os.path.join(configs.repo_path(), configs.current_ref()),
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        logging.debug(f"start checkout {project.name} {project.revision}")
+        ref = project.revision
+        if ref.startswith("refs"):
+            ref = ref.split("/")[-1]
+        Processor.open([
+            configs.git_path(), 'clone', '--depth=1', '-q', project.url,
+            '-b', ref,
+            configs.project_realpath(project),
+        ], cwd=configs.current_ref_realpath())
 
-            while p.poll() is None:
-                line = p.stdout.readline()
-                while line:
-                    eventbus.emit(eventbus.TOPIC_LOG, line.decode())
-                    line = p.stdout.readline()
-        except Exception as e:
-            logging.debug(e)
-            eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
-
-        eventbus.emit(eventbus.TOPIC_LOG, f"checkout {project.name} complete")
+        eventbus.emit(eventbus.TOPIC_LOG, f"checkout {project.name} {project.revision} complete")
         eventbus.emit(eventbus.TOPIC_CHECKOUT_PROJECT_COMPLETE)
 
 
