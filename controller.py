@@ -16,9 +16,13 @@ class Processor:
         logging.debug(f"RunCommand: {subprocess.list2cmdline(cmd)}")
         eventbus.emit(eventbus.TOPIC_LOG, f"RunCommand: {subprocess.list2cmdline(cmd)}")
         try:
-            result = subprocess.check_output(cmd, cwd=cwd)
+            p = subprocess.Popen(
+                cmd, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                creationflags=0x08000000)
+            result, _ = p.communicate()
             return result.decode()
-        except subprocess.CalledProcessError:
+        except Exception as e:
+            logging.debug(e)
             eventbus.emit(eventbus.TOPIC_LOG, traceback.format_exc())
 
     @staticmethod
@@ -26,7 +30,9 @@ class Processor:
         logging.debug(f"RunCommand: {subprocess.list2cmdline(cmd)}")
         eventbus.emit(eventbus.TOPIC_LOG, f"RunCommand: {subprocess.list2cmdline(cmd)}")
         try:
-            p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)
+            p = subprocess.Popen(cmd, cwd=cwd,
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 creationflags=0x08000000, **kw)
             while p.poll() is None:
                 line = p.stdout.readline()
                 while line:
@@ -41,10 +47,16 @@ class Processor:
     def run(cmd, cwd, **kw):
         logging.debug(f"RunCommand: {subprocess.list2cmdline(cmd)}")
         try:
-            subprocess.check_output(cmd, cwd=cwd, **kw)
-        except subprocess.CalledProcessError:
+            p = subprocess.Popen(cmd, cwd=cwd,
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 creationflags=0x08000000, **kw)
+            status = p.wait()
+            logging.debug(f"Command result {status}")
+            eventbus.emit(eventbus.TOPIC_LOG, f"Command result {status}")
+            return status == 0
+        except Exception as e:
+            logging.debug(e)
             return False
-        return True
 
 
 class Controller:
@@ -93,7 +105,7 @@ class Controller:
                 [configs.git_path(), 'rev-parse', '--short', 'HEAD'], configs.manifest_realpath())
             current_ref = result.strip()
             old_ref = configs.current_ref()
-            if old_ref is not '':
+            if old_ref != '':
                 result = Processor.run(
                     [configs.git_path(), 'cat-file', '-p', old_ref], configs.manifest_realpath())
                 if result:

@@ -6,6 +6,7 @@ from tkinter import ttk
 
 import configs
 import eventbus
+import resource
 from locales import locales
 from ui.about import AboutFrame
 from ui.information import InfoFrame
@@ -63,7 +64,7 @@ class Window:
         self.master.title("aosp-view")
         self.master.geometry('1280x800')
         self.master.minsize(1024, 800)
-        self.master.iconbitmap("res/android_10_logo.ico")
+        self.master.iconbitmap(resource.file_path("res/android_10_logo.ico"))
         self.master.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # self.menubar = tkinter.Menu(self.master)

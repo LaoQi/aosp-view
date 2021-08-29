@@ -54,6 +54,7 @@ class Configs:
         if os.path.isfile(CONFIG_PATH):
             with open(CONFIG_PATH, "r") as f:
                 self.configs = json.load(f)
+                logging.debug(f"read config {CONFIG_PATH}\n {self.configs}")
 
     def write(self):
         with open(CONFIG_PATH, "w") as f:

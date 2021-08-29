@@ -1,0 +1,1 @@
+python -m PyInstaller -F -n aosp-view --add-data="res/android_10_logo.ico;res" -w -i .\res\android_10_logo.ico .\main.py
