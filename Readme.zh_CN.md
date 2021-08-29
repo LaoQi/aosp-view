@@ -26,3 +26,7 @@
 ```shell
 python main.py
 ```
+
+## 截图
+
+![screenshot](res/screenshot.png)

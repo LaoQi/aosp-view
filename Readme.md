@@ -32,3 +32,7 @@ If it is not in your `PATH`, you can set it after start.
 ```shell
 python main.py
 ```
+
+## Screenshot
+
+![screenshot](res/screenshot.png)
