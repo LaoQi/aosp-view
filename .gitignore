@@ -2,3 +2,7 @@
 repo
 venv
 demo.py
+build
+dist
+__pycache__
+*.spec

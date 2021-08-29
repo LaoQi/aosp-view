@@ -25,11 +25,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Set Version
-      - name: Set Version
-        id: set_version
-        run: echo '::set-output name=VERSION::v1.'`git rev-parse --short HEAD`
-      
       - name: Install PyInstaller
         run: pip install PyInstaller
 
@@ -42,8 +37,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.set_version.outputs.VERSION }}
-          release_name: Release ${{ steps.set_version.outputs.VERSION }}
+          tag_name: master-${{ github.sha }}
+          release_name: Release ${{ github.sha }}
           draft: false
           prerelease: false
           
@@ -53,7 +48,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./dist/aosp-view.exe
-          asset_name: aosp-view.${{ steps.set_version.outputs.VERSION }}.exe
+          asset_name: aosp-view.${{ github.sha }}.exe
           asset_content_type: application/zip
