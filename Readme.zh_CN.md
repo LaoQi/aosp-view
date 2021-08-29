@@ -18,7 +18,7 @@
 
 ### Windows
 
-方法一： 从[release](https://github.com/LaoQi/aosp-view/) 下载直接运行(通过`PyInstaller`打包)
+方法一： 从[release](https://github.com/LaoQi/aosp-view/releases) 下载直接运行(通过`PyInstaller`打包)
 
 
 

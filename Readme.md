@@ -24,7 +24,7 @@ If it is not in your `PATH`, you can set it after start.
 ## Install & Run
 
 
-> Download from [release](https://github.com/LaoQi/aosp-view/)
+> Download from [release](https://github.com/LaoQi/aosp-view/releases)
 
 #### OR
 
