@@ -19,12 +19,14 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: windows-latest
-    env:
-      SHORT_SHA: ${GITHUB_SHA::9}
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      
+      - name: Set Short Hash
+        id: short_hash
+        run: echo "::set-output name=SHORT_SHA::${{ GITHUB_SHA::9 }}"
 
       - name: Install PyInstaller
         run: pip install PyInstaller
@@ -38,8 +40,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: master-${{ env.SHORT_SHA }}
-          release_name: Release ${{ env.SHORT_SHA }}
+          tag_name: master-${{ steps.short_hash.SHORT_SHA }}
+          release_name: Release ${{ steps.short_hash.SHORT_SHA }}
           draft: false
           prerelease: false
           
@@ -51,5 +53,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./dist/aosp-view.exe
-          asset_name: aosp-view.${{ env.SHORT_SHA }}.exe
+          asset_name: aosp-view.${{ steps.short_hash.SHORT_SHA }}.exe
           asset_content_type: application/zip
