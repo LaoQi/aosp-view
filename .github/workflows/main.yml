@@ -26,7 +26,7 @@ jobs:
       
       - name: Set Short Hash
         id: short_hash
-        run: echo "::set-output name=SHORT_SHA::`git rev-parse --short HEAD"`"
+        run: echo "::set-output name=SHORT_SHA::`git rev-parse --short HEAD`"
         shell: bash
 
       - name: Install PyInstaller
