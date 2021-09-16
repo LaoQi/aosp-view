@@ -71,8 +71,11 @@ class Configs:
         cmd = 'which git'
         if platform.system() == 'Windows':
             cmd = 'where git'
-        result = os.popen(cmd)
-        paths = result.read()
+        p = subprocess.Popen(
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            creationflags=0x08000000)
+        result, _ = p.communicate()
+        paths = result.decode()
         path = paths.strip('\r\n').split('\n')[0]
         if os.path.isfile(path):
             logging.debug(f"find git {path}")
